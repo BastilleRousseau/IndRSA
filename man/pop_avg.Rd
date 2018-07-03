@@ -24,5 +24,10 @@ A list containing a table population average with confidence intervals and a tab
 Extract population average of top model and extract individual coefficients. Population average can be calculated based on bootstrap (Prokopenko et al. 2016 JAppEco) or weighted based on standard errors (Murtaugh 2007 Ecology)
 }
 \examples{
-Add something
+data(goats)
+ls1<-list()
+ls1[[1]]<-as.formula(STATUS~ELEVATION+SLOPE+ET+ASPECT+HLI+TASP)
+ls1[[2]]<-as.formula(STATUS~ET+ASPECT+HLI+TASP)
+out<-rsf_ind(goats$ID, data=goats, form_ls=ls1)
+pop_avg(m=1, out, method="murtaugh") 
 }

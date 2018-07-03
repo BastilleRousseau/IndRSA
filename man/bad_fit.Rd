@@ -18,5 +18,10 @@ A list with first element giving individuals with bad fits based on coefficients
 Identify potential individual with bad fits based on coefficients and model convergence
 }
 \examples{
-Add something
+data(goats)
+ls1<-list()
+ls1[[1]]<-as.formula(STATUS~ELEVATION+SLOPE+ET+ASPECT+HLI+TASP)
+ls1[[2]]<-as.formula(STATUS~ET+ASPECT+HLI+TASP)
+out<-rsf_ind(goats$ID, data=goats, form_ls=ls1)
+bad_fit(out, cutoff=20) #None
 }

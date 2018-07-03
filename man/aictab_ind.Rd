@@ -18,5 +18,10 @@ A AIC model selection table
 Perform AIC model selection over all individuals by adding up likelihood of individual model (based code partly taken from package AICcmodavg)
 }
 \examples{
-Add something
+data(goats)
+ls1<-list()
+ls1[[1]]<-as.formula(STATUS~ELEVATION+SLOPE+ET+ASPECT+HLI+TASP)
+ls1[[2]]<-as.formula(STATUS~ET+ASPECT+HLI+TASP)
+out<-rsf_ind(goats$ID, data=goats, form_ls=ls1)
+aictab_ind(out)
 }

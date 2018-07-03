@@ -24,5 +24,9 @@ A list of list of glm objects
 Apply rsf_mod to each individual of a dataset
 }
 \examples{
-Add something
+data(goats)
+ls1<-list()
+ls1[[1]]<-as.formula(STATUS~ELEVATION+SLOPE+ET+ASPECT+HLI+TASP)
+ls1[[2]]<-as.formula(STATUS~ET+ASPECT+HLI+TASP)
+out<-rsf_ind(goats$ID, data=goats, form_ls=ls1)
 }
