@@ -24,4 +24,5 @@ You need to use the package `devtools`from Hadley Wickham.
 The package main functions are `rsf_mod`, `pop_avg`, `aictab_ind` and `kfold_ind`.  For a list of documented functions see the Reference manual. 
 For examples of how to use the main functions, you can also look at the vignette (not available yet). 
 
-
+## Important note ##
+As of now, the functions are implemented to take an "ID_Year" as input for individuals in rsf_mod. The underscore "_" is critical for proper use of later functions. Even if your indivduals are over the same period or over multiple years, adding _XXXX is required. This will be fixed in future update.   

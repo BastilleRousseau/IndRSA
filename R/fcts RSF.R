@@ -42,9 +42,46 @@ cmodel = function(cm) {
   cm
 }
 
-#' Apply a list of candidate models to a single individual  
+#' Convert a folder with individual files to object provided by ssf_ind or rsf_ind
 #'
-#' Apply a list of candidate models to a single individual 
+#' This function convert a folder of individual files (for example if analysis was ran on a high performance cluster) to the same format provided by ssf_ind or rsf_ind. This facilitate the use of other functions such as aictab_ind and pop_avg. 
+#' @param lsfiles The list of files to be imported, for example using the dir() command. 
+#' @param cleanModel Whether the cleanModel function should be applied. . 
+#' @return A list of the same format as ssf_ind or rsf_ind. 
+#' @export
+files2list<-function(lsfiles, cleanModel=F) {
+  out4<-list()  
+  pb = txtProgressBar(min = 0, max = length(lsfiles), initial = 0, style=3) 
+  for (i in 1:length(lsfiles)) {
+    out<-get(load(lsfiles[[i]]))
+    out2<-unlist(lapply(out, try(logLik)))
+    try(out3<-lapply(out, function(x) sqrt(diag(vcov(x)))))  
+    if (cleanModel) try((out<-lapply(out, cmodel_ssf)))  #Only for ssf need to adjust here for RSF 
+    out4[[i]]<-list(out, out2, out3)  
+    setTxtProgressBar(pb,i)
+  }
+  names(out4)<-lsfiles
+  return(out4)}
+
+#' Remove elements from clogit object to save space
+#'
+#' Remove elements from glm objects 
+#' @param cm A coxph object
+#' @return A coxph object
+#' @export
+cmodel_ssf = function(cm) { 
+  cm$linear.predictors = c()
+  cm$residuals = c()
+  cm$means = c()
+  cm$nevent = c()  
+  cm$y = c()
+  cm$formula = c()
+  cm
+}
+
+#' Apply a list of candidate RSF models to a single individual  
+#'
+#' Apply a list of candidate RSF models to a single individual 
 #' @param sub A subset of data from a single individual
 #' @param form_ls A list of formulas for the different candidate models
 #' @param cleamModel Whether the model should be "cleaned" to save memory space
@@ -58,6 +95,25 @@ rsf_mod<-function(sub, form_ls, cleanModel=F, method=method) {
   if (cleanModel) (out<-lapply(out, cmodel))
   return(list(out, out2, out3))
 }
+
+#' Apply a list of candidate SSF models to a single individual  
+#'
+#' Apply a list of candidate SSF models to a single individual 
+#' @param sub A subset of data from a single individual
+#' @param form_ls A list of formulas for the different candidate models
+#' @param cleamModel Whether the model should be "cleaned" to save memory space
+#' @param method Whether exact or approximate ML should be performed (see package survival)
+#' @return A list of coxph objects
+#' @export
+ssf_mod<-function(sub, form_ls, cleanModel=F, method="approximate") { 
+  require(survival)
+  out<-lapply(1:length(form_ls), function(x) survival::clogit(form_ls[[x]], data=sub, method=method))
+  out2<-unlist(lapply(out, try(logLik)))
+  try(out3<-lapply(out, function(x) sqrt(diag(vcov(x)))))
+  if (cleanModel) try((out<-lapply(out, cmodel_ssf)))
+  return(list(out, out2, out3))
+}
+
 
 #' Apply a list of candidate models to multiple individuals  
 #'
@@ -79,6 +135,25 @@ rsf_ind<-function(id,data, form_ls, cleanModel=F, method="glm.fit") { #id is a v
   if(length(id) != nrow(data)) (stop("id should be the same length as data"))
   id1<-sort(unique(id))
   out<-pbapply::pblapply(1:length(id1), function(x) rsf_mod(sub=data[id==id1[x],], form_ls=form_ls, method=method, cleanModel=cleanModel))
+  names(out)<-id1
+  return(out)  
+}
+
+#' Apply a list of SSF candidate models to multiple individuals  
+#'
+#' Apply ssf_mod to each individual of a dataset 
+#' @param id A vector indicating the individuals
+#' @param data The dataset containing all data
+#' @param form_ls A list of formulas for the different candidate models
+#' @param cleamModel Whether the model should be "cleaned" to save memory space (default = F)
+#' @param method Whether exact or approximate ML should be performed (see package survival)
+#' @return A list of of coxph objects
+#' @export
+#' @examples 
+ssf_ind<-function(id,data, form_ls, cleanModel=T, method="approximate") { #id is a vector of nrow(data)
+  if(length(id) != nrow(data)) (stop("id should be the same length as data"))
+  id1<-sort(unique(id))
+  out<-pbapply::pblapply(1:length(id1), function(x) try(ssf_mod(sub=data[id==id1[x],], form_ls=form_ls, method=method, cleanModel=cleanModel)))
   names(out)<-id1
   return(out)  
 }
@@ -197,7 +272,7 @@ rm_conv_fit1<-function(mod_ls, m=1) {
 #' ls1[[2]]<-as.formula(STATUS~ET+ASPECT+HLI+TASP)
 #' out<-rsf_ind(goats$ID, data=goats, form_ls=ls1)
 #' aictab_ind(out)
-aictab_ind<-function(mod_ls, cutoff=-1) { 
+aictab_ind<-function(mod_ls, cutoff=0, K=NULL) { 
   if(cutoff>0) {mod_ls<-rm_bad_fit(mod_ls, cutoff=cutoff)}
   if(cutoff==-1) {mod_ls<-rm_conv_fit(mod_ls)}
   Aiccf<-function(k, n, loglik) {
@@ -217,6 +292,7 @@ aictab_ind<-function(mod_ls, cutoff=-1) {
   Results <- data.frame(Modnames = 1:n_mod)
   Results$LL <-ll_ls(mod_ls)
   Results$K <- unlist(lapply(mod_ls[[1]][[1]], function(x) length(coef(x))))
+  if(!is.null(K)) { Results$K<-K}
   Results$AICc <- Aiccf(Results$K, n_id, Results$LL)
   Results$Delta_AICc <- Results$AICc - min(Results$AICc)
   Results$ModelLik <- exp(-0.5 * Results$Delta_AICc)
@@ -234,6 +310,7 @@ aictab_ind<-function(mod_ls, cutoff=-1) {
 #' @param cutoff A cutoff value to exclude individuals with bad fit, default = -1 indicating model that did not converge will be excluded. Values > 0 will exclude based on coefficient
 #' @param method If = "boot", population average is based on bootstrap, if = "murtaugh" based on standard errors weighting. See Prokopenko et al 2016 or Murtaugh 2007 for details. 
 #' @param nboot Number of bootstrap iterations, default = 1000. Only applicable if method = "boot".  
+#' @param id_year Whether id_year (instead of individual) are provided. Individual and year needs to be separated by an underscore for the function to work properly. 
 #' @return A list containing a table population average with confidence intervals and a table of individual coefficients
 #' @export
 #' @examples 
@@ -243,7 +320,7 @@ aictab_ind<-function(mod_ls, cutoff=-1) {
 #' ls1[[2]]<-as.formula(STATUS~ET+ASPECT+HLI+TASP)
 #' out<-rsf_ind(goats$ID, data=goats, form_ls=ls1)
 #' pop_avg(m=1, out, method="murtaugh") 
-pop_avg<-function(m=1, mod_ls,cutoff=0, method="boot", nboot=1000) {
+pop_avg<-function(m=1, mod_ls,cutoff=0, nudge=0.01, method="murtaugh", nboot=1000, id_year=F) {
   if(cutoff>0) {mod_ls<-rm_bad_fit1(mod_ls, cutoff=cutoff, m=m)}
   if(cutoff==-1) {mod_ls<-rm_conv_fit1(mod_ls,  m=m)}
   i<-length(mod_ls)
@@ -256,7 +333,8 @@ pop_avg<-function(m=1, mod_ls,cutoff=0, method="boot", nboot=1000) {
   co<-lapply(1:i, function(x) data.frame(t(data.frame(coef(mod_ls[[x]][[1]][[m]])))))
    coef2<-plyr::rbind.fill(co)
   rownames(coef2)<-names(mod_ls)
-  coef2$name<-matrix(unlist(strsplit(as.character(rownames(coef2)), "_")), ncol=2, byrow=T)[,1]
+  if(id_year==T) {coef2$name<-matrix(unlist(strsplit(as.character(rownames(coef2)), "_")), ncol=2, byrow=T)[,1]} ##### Needs to be adjusted when not Id year
+  if(id_year==F) {coef2$name<-rownames(coef2)}
   coef2$ID<-names(mod_ls)
   coef2<-add_weights(coef2)
 
@@ -279,19 +357,22 @@ pop_avg<-function(m=1, mod_ls,cutoff=0, method="boot", nboot=1000) {
       boot[[i]]<-apply(coef2[sample(nrow(coef2), nrow(coef2), replace=T, prob=coef2$Freq), 2:(ncol(coef2)-2) ],2, median, na.rm=T) #Modify
     }
     pop<-mean_ci_boot(boot)
+    pop$Prop<-unlist(lapply(1:nrow(pop), function(x) ifelse(pop[x,1]>0, sum(coef2[,(x+1)]>0, na.rm=T),sum(coef2[,(x+1)]<0, na.rm=T))/length(mod_ls))) #Not useful since all are below zero
   }
   
   if(method=="murtaugh") { 
     se<-lapply(1:i, function(x) data.frame(t(data.frame(mod_ls[[x]][[3]][[m]]))))
     se2<-plyr::rbind.fill(se)
+    se2[se2<nudge]<-nudge
     cc<-coef2[,2:(ncol(coef2)-2)]
-    ls<-lapply(1:ncol(se2), function(x) lm(cc[,x]~1, weights=1/se2[,x]^2))
-    pop<-data.frame(matrix(unlist(lapply(ls, function(x) cbind(coef(x), confint(x, method="Wald")))), byrow=3, ncol=3))
+    
+    ls<-lapply(1:ncol(se2), function(x) try(lm(cc[,x]~1, weights=1/se2[,x]^2)))
+    ii<-which(unlist(lapply(ls, class))=="lm")
+    pop<-data.frame(matrix(unlist(lapply(ls[ii], function(x) cbind(coef(x), confint(x, method="Wald")))), byrow=3, ncol=3))
     names(pop)<-c("Mean", "LCI", "UCI")
-    rownames(pop)<-names(coef2[,2:(ncol(coef2)-2)])
+    rownames(pop)<-names(coef2[,2:(ncol(coef2)-2)])[ii]
+    #pop$Prop<-unlist(lapply(1:nrow(pop), function(x) ifelse(pop[x,1]>0, sum(coef2[,(x+1)]>0, na.rm=T),sum(coef2[,(x+1)]<0, na.rm=T))/length(mod_ls))) #Not useful since all are below zero
   }
-  
-  pop$Prop<-unlist(lapply(1:nrow(pop), function(x) ifelse(pop[x,1]>0, sum(coef2[,(x+1)]>0, na.rm=T),sum(coef2[,(x+1)]<0, na.rm=T))/length(mod_ls))) #Not useful since all are below zero
   return(list(pop, coef2))
 }
 
@@ -301,6 +382,7 @@ pop_avg<-function(m=1, mod_ls,cutoff=0, method="boot", nboot=1000) {
 #' @param m model number (based on number in list of formula provided to rsf_ind)
 #' @param mod_ls A list of list of model generated by rsf_ind
 #' @param cutoff A cutoff value to exclude individuals with bad fit, default = -1 indicating model that did not converge will be excluded. Values > 0 will exclude based on coefficient
+#' @param id_year Whether id_year (instead of individual) are provided. Individual and year needs to be separated by an underscore for the function to work properly. 
 #' @return A table of individual standard errors for each coefficients
 #' @export
 #' @examples 
@@ -310,7 +392,7 @@ pop_avg<-function(m=1, mod_ls,cutoff=0, method="boot", nboot=1000) {
 #' ls1[[2]]<-as.formula(STATUS~ET+ASPECT+HLI+TASP)
 #' out<-rsf_ind(goats$ID, data=goats, form_ls=ls1)
 #' ind_se(m=1, out) 
-ind_se<-function(m=1, mod_ls,cutoff=0) {
+ind_se<-function(m=1, mod_ls,cutoff=0, id_year=F) {
   if(cutoff>0) {mod_ls<-rm_bad_fit1(mod_ls, cutoff=cutoff, m=m)}
   if(cutoff==-1) {mod_ls<-rm_conv_fit1(mod_ls,  m=m)}
   i<-length(mod_ls)
@@ -323,7 +405,10 @@ ind_se<-function(m=1, mod_ls,cutoff=0) {
   se<-lapply(1:i, function(x) data.frame(t(data.frame(mod_ls[[x]][[3]][[m]]))))
   se2<-plyr::rbind.fill(se)
   rownames(se2)<-names(mod_ls)
-  se2$name<-matrix(unlist(strsplit(as.character(rownames(se2)), "_")), ncol=2, byrow=T)[,1]
+  #se2$name<-matrix(unlist(strsplit(as.character(rownames(se2)), "_")), ncol=2, byrow=T)[,1]
+  if(id_year==T) {se2$name<-matrix(unlist(strsplit(as.character(rownames(se2)), "_")), ncol=2, byrow=T)[,1]} ##### Needs to be adjusted when not Id year
+  if(id_year==F) {se2$name<-rownames(se2)}
+  
   se2$ID<-names(mod_ls)
   se2<-add_weights(se2)
   return(se2)
@@ -335,6 +420,7 @@ ind_se<-function(m=1, mod_ls,cutoff=0) {
 #' @param m model number (based on number in list of formula provided to rsf_ind)
 #' @param mod_ls A list of list of model generated by rsf_ind
 #' @param cutoff A cutoff value to exclude individuals with bad fit, default = -1 indicating model that did not converge will be excluded. Values > 0 will exclude based on coefficient
+#' @param id_year Whether id_year (instead of individual) are provided. Individual and year needs to be separated by an underscore for the function to work properly. 
 #' @return A table of individual coefficients
 #' @export
 #' @examples 
@@ -344,7 +430,7 @@ ind_se<-function(m=1, mod_ls,cutoff=0) {
 #' ls1[[2]]<-as.formula(STATUS~ET+ASPECT+HLI+TASP)
 #' out<-rsf_ind(goats$ID, data=goats, form_ls=ls1)
 #' ind_coef(m=1, out) 
-ind_coef<-function(m=1, mod_ls,cutoff=0) {
+ind_coef<-function(m=1, mod_ls,cutoff=0, id_year=F) {
   if(cutoff>0) {mod_ls<-rm_bad_fit1(mod_ls, cutoff=cutoff, m=m)}
   if(cutoff==-1) {mod_ls<-rm_conv_fit1(mod_ls,  m=m)}
   i<-length(mod_ls)
@@ -357,7 +443,8 @@ ind_coef<-function(m=1, mod_ls,cutoff=0) {
   co<-lapply(1:i, function(x) data.frame(t(data.frame(coef(mod_ls[[x]][[1]][[m]])))))
   coef2<-plyr::rbind.fill(co)
   rownames(coef2)<-names(mod_ls)
-  coef2$name<-matrix(unlist(strsplit(as.character(rownames(coef2)), "_")), ncol=2, byrow=T)[,1]
+  if(id_year==T) {coef2$name<-matrix(unlist(strsplit(as.character(rownames(coef2)), "_")), ncol=2, byrow=T)[,1]} ##### Needs to be adjusted when not Id year
+  if(id_year==F) {coef2$name<-rownames(coef2)}
   coef2$ID<-names(mod_ls)
   coef2<-add_weights(coef2)
   return(coef2)
