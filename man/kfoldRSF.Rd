@@ -4,9 +4,18 @@
 \alias{kfoldRSF}
 \title{Perform kfold cross-validation on a RSF output.}
 \usage{
-kfoldRSF(mod, k = 5, nrepet = 10, nbins = 10, jitter = TRUE,
-  random = TRUE, method = method, x = m, form_ls = ls,
-  reproducible = TRUE)
+kfoldRSF(
+  mod,
+  k = 5,
+  nrepet = 10,
+  nbins = 10,
+  jitter = TRUE,
+  random = TRUE,
+  method = method,
+  x = m,
+  form_ls = ls,
+  reproducible = TRUE
+)
 }
 \arguments{
 \item{mod}{A RSF model (glm or glmer)}

@@ -4,7 +4,15 @@
 \alias{pop_avg}
 \title{Extract population average of top model and extract individual coefficients}
 \usage{
-pop_avg(m = 1, mod_ls, cutoff = 0, method = "boot", nboot = 1000)
+pop_avg(
+  m = 1,
+  mod_ls,
+  cutoff = 0,
+  nudge = 0.01,
+  method = "murtaugh",
+  nboot = 1000,
+  id_year = F
+)
 }
 \arguments{
 \item{m}{model number (based on number in list of formula provided to rsf_ind)}
@@ -16,6 +24,8 @@ pop_avg(m = 1, mod_ls, cutoff = 0, method = "boot", nboot = 1000)
 \item{method}{If = "boot", population average is based on bootstrap, if = "murtaugh" based on standard errors weighting. See Prokopenko et al 2016 or Murtaugh 2007 for details.}
 
 \item{nboot}{Number of bootstrap iterations, default = 1000. Only applicable if method = "boot".}
+
+\item{id_year}{Whether id_year (instead of individual) are provided. Individual and year needs to be separated by an underscore for the function to work properly.}
 }
 \value{
 A list containing a table population average with confidence intervals and a table of individual coefficients

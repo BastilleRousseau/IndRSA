@@ -4,8 +4,16 @@
 \alias{kfold_ind}
 \title{Perform kfold cross-validation at the individual level .}
 \usage{
-kfold_ind(m = 1, mod_ls, ls = ls, cutoff = 0, k = 5, nrepet = 5,
-  nbins = 10, grph = T)
+kfold_ind(
+  m = 1,
+  mod_ls,
+  ls = ls,
+  cutoff = 0,
+  k = 5,
+  nrepet = 5,
+  nbins = 10,
+  grph = T
+)
 }
 \arguments{
 \item{m}{model number (based on number in list of formula provided to rsf_ind)}
