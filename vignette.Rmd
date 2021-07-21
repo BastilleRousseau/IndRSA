@@ -1,0 +1,166 @@
+---
+title: "Vignette IndRSA"
+author: "Guillaume Bastille-Rousseau"
+date: "July 19, 2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+``` {r eval=T, echo=F, message=F, warning=F}
+#library(devtools)
+#install_github("BastilleRousseau/IndRSA")
+library(IndRSA)
+library(survival)
+simu_coefs<-function(coef, se, n=1000) {
+  out<-array(NA, c(nrow(coef), ncol(coef), n))
+  for (i in 1:nrow(coef)) {
+    for (j in 2:(ncol(coef)-2)) {
+      out[i,j,]<-rnorm(n,coef[i,j], se[i,j])
+    }}
+  return(out)
+}
+simu_avg<-function(simu) {
+ tt<-(matrix(unlist(lapply(1:dim(simu)[3], function(x) colMeans(simu[,,x], na.rm=T))), nrow=dim(simu)[3], ncol=dim(simu)[2], byrow=T))
+}
+
+
+
+simu_spe<-function(simu) {
+  return(matrix(unlist(lapply(1:dim(simu)[3], function(x) apply(simu[,,x], 2, function(y) mean(abs(y), na.rm=T)))), nrow=dim(simu)[3], ncol=dim(simu)[2], byrow=T))
+}
+
+simu_sd<-function(simu) {
+  return(matrix(unlist(lapply(1:dim(simu)[3], function(x) apply(simu[,,x], 2, function(y) sd(y, na.rm=T)))), nrow=dim(simu)[3], ncol=dim(simu)[2], byrow=T))
+}
+
+
+simu_cons2<-function(simu, col1, col2) {
+  return(unlist(lapply(1:dim(simu)[3], function(x)   mean(abs(simu[,col1,x]-simu[,col2,x]), na.rm=T)  )))
+}
+
+simu_cons3<-function(simu, col1, col2, col3) {
+  return(unlist(lapply(1:dim(simu)[3], function(x)   mean(abs(simu[,col1,x]-simu[,col2,x])+abs(simu[,col1,x]-simu[,col3,x])+abs(simu[,col3,x]-simu[,col2,x])/3, na.rm=T) )))
+}
+
+simu_rev2<-function(simu, col1, col2) {
+  return(unlist(lapply(1:dim(simu)[3], function(x) mean(ifelse(sign(simu[,col1,x])!= sign(simu[,col2,x]), 1, 0), na.rm=T))))
+}
+
+simu_rev3<-function(simu, col1, col2, col3) {
+  return(unlist(lapply(1:dim(simu)[3], function(x) mean(c(ifelse(sign(simu[,col1,x])!= sign(simu[,col2,x]), 1, 0), ifelse(sign(simu[,col1,x])== sign(simu[,col3,x]), 1, 0), ifelse(sign(simu[,col3,x])== sign(simu[,col2,x]), 1, 0)),na.rm=T))))
+}
+
+```
+
+# Individual and population-level RSF - *rsf_ind* and *pop_avg*
+
+The function *rsf_ind* performs individual-level RSFs. The function takes a list of candidate models (using *as.formula()*). The function *aictab_ind* performs population-level AIC model selection (by adding up individual model loglikelihood). *pop_avg* performs population-level averaging. Two methods are available for calculating confidence intervals, the default (and recommended) is based on Murtaugh (2007). A bootstrap approach (based on Prokopenko 2016) is also available. *ind_coef* and *ind_se* also extract individual-level coefficients and standard errors.<br> <br>
+Murtaugh, P. Simplicity and complexity in ecological data anlysis. Ecology 88, 56–62 (2007).<br> <br>
+Prokopenko, C. M., Boyce, M. S. & Avgar, T. Characterizing wildlife behavioural responses to roads using integrated step selection analysis. J. Appl. Ecol. 1, (2016).<br> <br>
+\newline
+
+``` {r eval=T}
+data(goats)
+ls1<-list()
+ls1[[1]]<-as.formula(STATUS~ELEVATION+SLOPE+ET+ASPECT+HLI+TASP)
+ls1[[2]]<-as.formula(STATUS~ET+ASPECT+HLI+TASP)
+out<-rsf_ind(goats$ID, data=goats, form_ls=ls1)
+aictab_ind(out) # Model 1 is the best 
+
+#Calculate population average for the first model of the list (m=1)
+pop<-pop_avg(m=1, out, method="murtaugh") 
+pop[[1]] #Population average summary 
+pop[[2]] #Individual level coefficients 
+ind_coef(m=1, out) #Another way of getting individual coefficients 
+ind_se(m=1, out) #Individual level standard errors 
+kfold_ind(m=1, out, ls=ls1, grph=F) #kfold cross validation for each individual  
+```
+
+# Individual and population-level SSF  - *ssf_ind* and *pop_avg*
+The function *ssf_ind* performs individual-level SSFs similar to *rsf_ind*. The function takes a list of candidate models (using *as.formula()*). The function *aictab_ind*, *pop_avg*, *ind_coef*, and *ind_se* works similarly than in example above. For the example below, we created a new column strata in the goat dataset that assigns two random points to each used points to create a conditional design similar to an SSF <br> <br>
+\newline
+
+``` {r eval=T}
+data(goats)
+goats<-goats[order(goats$ID),]
+goats_use<-goats[goats$STATUS==1,]
+goats_use$strata<-1:nrow(goats_use)
+goats_rnd<-goats[goats$STATUS==0,]
+goats_rnd$strata<-rep(1:nrow(goats_use), each=2)
+goats_ssf<-rbind(goats_use, goats_rnd)
+ls1<-list()
+ls1[[1]]<-as.formula(STATUS~ELEVATION+SLOPE+ET+ASPECT+HLI+TASP+strata(strata))
+ls1[[2]]<-as.formula(STATUS~ET+ASPECT+HLI+TASP+strata(strata))
+out<-ssf_ind(goats_ssf$ID, data=goats_ssf, form_ls=ls1)
+aictab_ind(out)
+pop<-pop_avg(m=1, out, method="murtaugh")
+pop[[1]] #Population average summary 
+pop[[2]] #Individual level coefficients 
+coef<-ind_coef(m=1, out)
+se<-ind_se(m=1, out)
+
+```
+
+
+
+# Metrics of variation in resource selection behavior (specialization, heterogeneity, consistency and reversal)  - *simu_spe*, *simu_sd*, *simu_consX*, and *simu_revX*
+The functions *simu_spe* and *simu_sd* calculates specialization and heterogeneity metrics as described in Bastille-Rousseau & Wittemyer (in review). To propagate uncertainty associated to individual coefficients, *simu_coefs* is first used to simulate individual coefficients based on the coefficient value and its standard error. <br> <br>
+\newline
+
+``` {r eval=T}
+data(goats)
+ls1<-list()
+ls1[[1]]<-as.formula(STATUS~ELEVATION+SLOPE+ET+ASPECT+HLI+TASP)
+out<-rsf_ind(goats$ID, data=goats, form_ls=ls1)
+coef<-ind_coef(m=1, out)
+se<-ind_se(m=1, out)
+simu<-simu_coefs(coef, se, n=100)
+
+#Specialization 
+spe<-simu_spe(simu)
+colnames(spe)<-names(coef)
+head(spe)
+apply(spe, 2, quantile, na.rm=T) #Show variation around estimate of each covariate
+colMeans(spe) #Calculate average specialization for each covariate
+
+#Heterogeneity
+sd<-simu_sd(simu)
+colnames(sd)<-names(coef)
+head(sd)
+apply(sd, 2, quantile, na.rm=T) #Show variation around estimate of each covariate
+colMeans(sd) #Calculate average heterogeneity for each covariate
+
+```
+
+For consistency and reversal, calculations are done one covariate at a time. *simu_cons2* and *simu_rev2* are used for calculations when there are two time periods and *simu_cons3* and *simu_rev3* are used when there is three temporal periods. For the example below, we created an artificial Season column to the goat dataset to estimate temporal consistency and reversal.<br> <br>
+\newline
+
+``` {r eval=T}
+data(goats)
+goats$Season<-c("1", "2") #Adding a fake season column 
+ls1<-list()
+ls1[[1]]<-as.formula(STATUS~(ELEVATION+SLOPE+ET+ASPECT+HLI+TASP):Season)  
+out<-rsf_ind(goats$ID, data=goats, form_ls=ls1)
+coef<-ind_coef(m=1, out)
+se<-ind_se(m=1, out)
+simu<-simu_coefs(coef, se, n=100)
+
+#Consistency for elevation 
+head(coef)
+#Calculate specialization for elevation covariate, column 3 and 4 contains 
+#coefficients for elevation for each season 
+cons_elevation<-simu_cons2(simu, 3, 4) 
+quantile(cons_elevation) #Show variation around estimate of elevation covariate
+mean(cons_elevation) #Calculate average consistency for elevation covariate
+
+#Reversal for elevation 
+head(coef)
+rev_elevation<-simu_rev2(simu, 3, 4) #Calculate specialization for elevation covariate
+quantile(rev_elevation) #Show variation around estimate of elevation covariate
+mean(rev_elevation) #Calculate average reversal for elevation covariate
+
+```
+
+

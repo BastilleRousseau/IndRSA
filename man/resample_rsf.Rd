@@ -2,7 +2,7 @@
 % Please edit documentation in R/fcts RSF.R
 \name{resample_rsf}
 \alias{resample_rsf}
-\title{Resample a RSF table to keep constant ratio of used/random locations accross individuals}
+\title{Resample a RSF table to keep constant ratio of used/random locations across individuals}
 \usage{
 resample_rsf(data, id = "Id_Year", value = "Value", ratio = 3)
 }
@@ -19,5 +19,5 @@ resample_rsf(data, id = "Id_Year", value = "Value", ratio = 3)
 A RSF dataset
 }
 \description{
-Resample a RSF table to keep constant ratio of used/random locations accross individuals. Resampling is done with replacement.
+Resample a RSF table to keep constant ratio of used/random locations across individuals. Resampling is done with replacement.
 }

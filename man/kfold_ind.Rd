@@ -4,8 +4,16 @@
 \alias{kfold_ind}
 \title{Perform kfold cross-validation at the individual level .}
 \usage{
-kfold_ind(m = 1, mod_ls, ls = ls, cutoff = 0, k = 5, nrepet = 5,
-  nbins = 10, grph = T)
+kfold_ind(
+  m = 1,
+  mod_ls,
+  ls = ls,
+  cutoff = 0,
+  k = 5,
+  nrepet = 5,
+  nbins = 10,
+  grph = T
+)
 }
 \arguments{
 \item{m}{model number (based on number in list of formula provided to rsf_ind)}
@@ -36,5 +44,5 @@ ls1<-list()
 ls1[[1]]<-as.formula(STATUS~ELEVATION+SLOPE+ET+ASPECT+HLI+TASP)
 ls1[[2]]<-as.formula(STATUS~ET+ASPECT+HLI+TASP)
 out<-rsf_ind(goats$ID, data=goats, form_ls=ls1)
-kfold_ind(m=1, out, ls=ls1) 
+kfold_ind(m=1, out, ls=ls1)
 }

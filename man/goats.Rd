@@ -4,7 +4,25 @@
 \name{goats}
 \alias{goats}
 \title{goats - Mountain goats data set}
-\format{A data frame with 19014 rows and 8 variables}
+\format{
+A data frame with 19014 rows and 8 variables
+
+STATUS a numeric vector, 1: used, 0: available
+
+ID a numeric vector, individuals
+
+ELEVATION a numeric vector (m)
+
+SLOPE a numeric vector (degrees, steep)
+
+ET a numeric vector, access to escape terrain (distance from steep slopes, m)
+
+ASPECT a numeric vector (degrees)
+
+HLI a numeric vector, heat load index (0-1)
+
+TASP a numeric vector, transformed aspect
+}
 \usage{
 goats
 }

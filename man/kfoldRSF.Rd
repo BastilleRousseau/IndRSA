@@ -4,9 +4,18 @@
 \alias{kfoldRSF}
 \title{Perform kfold cross-validation on a RSF output.}
 \usage{
-kfoldRSF(mod, k = 5, nrepet = 10, nbins = 10, jitter = TRUE,
-  random = TRUE, method = method, x = m, form_ls = ls,
-  reproducible = TRUE)
+kfoldRSF(
+  mod,
+  k = 5,
+  nrepet = 10,
+  nbins = 10,
+  jitter = TRUE,
+  random = TRUE,
+  method = method,
+  x = m,
+  form_ls = ls,
+  reproducible = TRUE
+)
 }
 \arguments{
 \item{mod}{A RSF model (glm or glmer)}
@@ -17,7 +26,7 @@ kfoldRSF(mod, k = 5, nrepet = 10, nbins = 10, jitter = TRUE,
 
 \item{nbins}{Number of bins (default =10)}
 
-\item{jitter}{Logical, whether to add some random noise to the predictions (useful when the model is fitted on categorica  variables, which can produces error in the ranking process).}
+\item{jitter}{Logical, whether to add some random noise to the predictions (useful when the model is fitted on categorical variables, which can produces error in the ranking process).}
 
 \item{reproducible}{Logical, whether to use a fixed seed for each repetition.}
 }
