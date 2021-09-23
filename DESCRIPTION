@@ -1,16 +1,11 @@
 Package: IndRSA
-Title: What the Package Does (One Line, Title Case)
+Title: An R package for individual-level Resource Selection Analysis
 Version: 0.0.0.9000
-Authors@R: 
-    person(given = "First",
-           family = "Last",
-           role = c("aut", "cre"),
-           email = "first.last@example.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to
-    pick a license
+Authors@R: person("Guillaume", "Bastille-Rousseau", email = "gbr@siu.edu", role = c("aut", "cre"))
+Description: This package provides a series of functions to perform resource selection analysis at the individual level.
+Depends: R (>= 3.3.2)
+License: GPL (>=3)
 Encoding: UTF-8
 LazyData: true
-Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.1.9001
+RoxygenNote: 6.0.1.9000
+Imports: pbapply, brglm, survival, plyr, randomForest
