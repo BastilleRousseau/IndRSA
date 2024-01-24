@@ -781,8 +781,24 @@ simu_cons2<-function(simu, col1, col2) {
 #' quantile(cons_elevation) #Show variation around estimate of elevation covariate
 #' mean(cons_elevation) #Calculate average consistency for elevation covariate
 simu_cons3<-function(simu, col1, col2, col3) {
-  return(unlist(lapply(1:dim(simu)[3], function(x)   mean(abs(simu[,col1,x]-simu[,col2,x])+abs(simu[,col1,x]-simu[,col3,x])+abs(simu[,col3,x]-simu[,col2,x])/3, na.rm=T) )))
+  return(unlist(lapply(1:dim(simu)[3], function(x)   mean((abs(simu[,col1,x]-simu[,col2,x])+abs(simu[,col1,x]-simu[,col3,x])+abs(simu[,col3,x]-simu[,col2,x]))/3, na.rm=T) )))
 }
+
+
+simu_cons4<-function(simu, col1, col2, col3, col4) {
+  return(unlist(lapply(1:dim(simu)[3], function(x)   mean((abs(simu[,col1,x]-simu[,col2,x])+abs(simu[,col1,x]-simu[,col3,x])+abs(simu[,col3,x]-simu[,col2,x])+
+                                                             abs(simu[,col1,x]-simu[,col4,x])+abs(simu[,col2,x]-simu[,col4,x])+abs(simu[,col3,x]-simu[,col4,x]))/6, na.rm=T) )))
+}
+
+
+simu_cons5<-function(simu, col1, col2, col3, col4, col5) {
+  return(unlist(lapply(1:dim(simu)[3], function(x)   mean((abs(simu[,col1,x]-simu[,col2,x])+abs(simu[,col1,x]-simu[,col3,x])+abs(simu[,col3,x]-simu[,col2,x])+
+                                                             abs(simu[,col1,x]-simu[,col4,x])+abs(simu[,col2,x]-simu[,col4,x])+abs(simu[,col3,x]-simu[,col4,x])+
+                                                             abs(simu[,col1,x]-simu[,col5,x])+abs(simu[,col2,x]-simu[,col5,x])+abs(simu[,col3,x]-simu[,col5,x])+
+                                                             abs(simu[,col4,x]-simu[,col5,x]))/10, na.rm=T) )))
+}
+
+
 
 
 #' Temporal reversal (with TWO time periods) based on simulated coefficients
