@@ -34,5 +34,5 @@ kfoldRSF(
 A data frame with the correlations (\code{cor}) and the type of value (\code{type}).
 }
 \description{
-Perform kfold cross-validation on a RSF output. Similar to what is recommended in Boyce 2002. Function developped with Mathieu Basille
+Perform kfold cross-validation on a RSF output. Similar to what is recommended in Boyce 2002. Function developed with Mathieu Basille
 }

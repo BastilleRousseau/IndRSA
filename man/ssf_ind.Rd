@@ -4,7 +4,7 @@
 \alias{ssf_ind}
 \title{Apply a list of SSF candidate models to multiple individuals}
 \usage{
-ssf_ind(id, data, form_ls, cleanModel = T, method = "approximate")
+ssf_ind(id, data, form_ls, cleanModel = F, method = "approximate")
 }
 \arguments{
 \item{id}{A vector indicating the individuals}
@@ -13,13 +13,21 @@ ssf_ind(id, data, form_ls, cleanModel = T, method = "approximate")
 
 \item{form_ls}{A list of formulas for the different candidate models}
 
-\item{method}{Whether exact or approximate ML should be performed (see package survival)}
+\item{cleanModel}{Whether the model should be "cleaned" to save memory space (default = F)}
 
-\item{cleamModel}{Whether the model should be "cleaned" to save memory space (default = F)}
+\item{method}{Whether exact or approximate ML should be performed (see package survival)}
 }
 \value{
 A list of of coxph objects
 }
 \description{
 Apply ssf_mod to each individual of a dataset
+}
+\examples{
+data(deer)
+deer$log_sl<-log(deer$step_length)
+ls2<-list()
+ls2[[1]]<-as.formula(STATUS~forest+hummod+log_sl+strata(STRATA))
+ls2[[2]]<-as.formula(STATUS~forest+log_sl+strata(STRATA))
+out<-ssf_ind(deer$ID, data=deer, form_ls=ls2)
 }

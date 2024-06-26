@@ -7,5 +7,5 @@ Depends: R (>= 3.3.2)
 License: GPL (>=3)
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.0.1.9000
+RoxygenNote: 7.3.1
 Imports: pbapply, brglm, survival, plyr, randomForest

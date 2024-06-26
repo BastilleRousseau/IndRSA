@@ -27,6 +27,6 @@ TASP a numeric vector, transformed aspect
 goats
 }
 \description{
-GPS collar data of mountain goats (Oreamnos americanus) from Lele and Keim (2006).
+GPS collar data for a RSF of mountain goats (Oreamnos americanus) from Lele and Keim (2006) for an RSF.
 }
 \keyword{datasets}
